@@ -111,7 +111,40 @@ function stopAnimation()
     tmr.unregister(TIMER_ID)
 end
 
+-- illuminates the light corresponding to the first character in the string `letter`
+function displayLetter(letter)
+    local asciiCode = string.byte(string.upper(letter))
+    local asciiA = string.byte('A')
+    local light = asciiCode - asciiA + 1
+    if light < 1 or light > 26 then
+        light = 0
+    end
 
+    setLight(light)
+end
+
+-- display a message letter by letter
+LETTER_DURATION = 1000 -- how long to illuminate each letter when displaying a message
+function displayMessage(message)
+    stopAnimation()
+
+    local index = 1
+    tmr.alarm(TIMER_ID, LETTER_DURATION, tmr.ALARM_AUTO, function()
+        -- blank the board for a short time
+        setLight(0)
+        tmr.delay(300000)
+
+        -- clean up our global timer if we're done
+        if index > string.len(message) then
+            stopAnimation()
+            return
+        end
+
+        -- display the current letter of the message
+        displayLetter(string.sub(message, index))
+        index = index + 1
+    end)
+end
 
 setupController()
 animateLightsOpt()
