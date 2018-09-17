@@ -2,7 +2,7 @@ dofile("secrets.lua")
 
 MESSAGE_TIMER_ID = 2 -- Use NodeMCU timer id 2 for our message timer loop
 LETTER_DURATION = 1000 -- how long to illuminate each letter when displaying a message
-POLL_DELAY = 10000 -- how long to wait before checking for a message
+POLL_DELAY = 60000 -- how long to wait before checking for a message
 
 -- check our message server for a queued message after a configured delay
 -- if we receive a non-blank response body (after trimming whitespace) then 
