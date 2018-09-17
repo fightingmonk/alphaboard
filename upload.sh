@@ -2,4 +2,4 @@
 
 PORT=/dev/cu.usbserial-142
 
-/usr/local/bin/nodemcu-uploader -p $PORT upload init.lua spi-lights.lua animations.lua
+/usr/local/bin/nodemcu-uploader -p $PORT upload init.lua spi-lights.lua animations.lua messages.lua secrets.lua
