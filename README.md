@@ -13,8 +13,8 @@ It uses the ESP8266's SPI interface to control four 8-bit shift register ICs, wh
 [latest Lua runtime](https://nodemcu-build.com/index.php)
 1. Install [nodemcu-uploader](https://github.com/kmpm/nodemcu-uploader)
 1. If you want to poll a server for messages to display, in `secrets.lua`:
-  1. add your Wifi network SSID and password
-  1. add the URL and shared secret for your message server
+    1. add your Wifi network SSID and password
+    1. add the URL and shared secret for your message server
 1. Update the USB device name in `upload.sh` and run it to upload this code to your board
 1. Reset the board for good measure and have fun!
 
@@ -37,7 +37,7 @@ while `displayLetter("ZY")` turns on pin 26.
 
 ## Setting up a message server
 
-The message polling function in `messages.lua` makes a form-encoded HTTP POST that includes `FetchKey` with a shared secret in the request body for auth. If strips leading and trailing whitespace from the server response and, if not empty, passes the result to `displayMessage()`.
+The message polling function in `messages.lua` makes a form-encoded HTTP POST that includes `FetchKey` with a shared secret in the request body for auth. It strips leading and trailing whitespace from the server response and, if not empty, passes the result to `displayMessage()`.
 
 The `cgi` directory in this repo contains a simple CGI message server. It handles two POST requests:
 
