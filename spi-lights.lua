@@ -9,7 +9,7 @@ CHIP_IO_PINS = {8, 4, 2, 1} -- corresponds to GPIO pins 15, 2, 4, 5 on the 8266 
 
 -- initialize SPI, set our GPIO control pins to output mode, and zero out the attached shift registers
 function setupController()
-  spi.setup(1, spi.MASTER, spi.CPOL_HIGH, spi.CPHA_LOW, spi.DATABITS_8, 0)
+  spi.setup(1, spi.MASTER, spi.CPOL_LOW, spi.CPHA_LOW, spi.DATABITS_8, 0)
 
   for i = 1, #CHIP_IO_PINS do
     gpio.mode(CHIP_IO_PINS[i], gpio.OUTPUT)
