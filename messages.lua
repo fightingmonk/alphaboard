@@ -1,14 +1,15 @@
 dofile("secrets.lua")
 
-MESSAGE_TIMER_ID = 2 -- Use NodeMCU timer id 2 for our message timer loop
-LETTER_DURATION = 1000 -- how long to illuminate each letter when displaying a message
-POLL_DELAY = 60000 -- how long to wait before checking for a message
+local MESSAGE_TIMER = tmr.create() 
+local LETTER_DURATION = 2000
+local POLL_DELAY = 60000 -- how long to wait before checking for a message
 
 -- check our message server for a queued message after a configured delay
 -- if we receive a non-blank response body (after trimming whitespace) then 
 --   display the message; otherwise re-invoke ourself
 function checkForMessagesSoon()
-    tmr.alarm(MESSAGE_TIMER_ID, POLL_DELAY, tmr.ALARM_SINGLE, function()
+    MESSAGE_TIMER:unregister()
+    MESSAGE_TIMER:register(POLL_DELAY, tmr.ALARM_SINGLE, function()
         http.post(MESSAGE_SERVER_URL,
             'Content-Type: application/x-www-form-urlencoded\r\n',
             'FetchKey=' .. MESSAGE_SERVER_SECRET,
@@ -27,18 +28,20 @@ function checkForMessagesSoon()
                 end
             end)
     end)
+    MESSAGE_TIMER:start()
 end
 
 -- display a message letter by letter
 function displayMessage(message)
     stopAnimation()
     stopMessageTimer()
+    setLight(0)
 
     local index = 1
-    tmr.alarm(MESSAGE_TIMER_ID, LETTER_DURATION, tmr.ALARM_AUTO, function()
+    MESSAGE_TIMER:register(LETTER_DURATION, tmr.ALARM_AUTO, function()
         -- blank the board for a short time
         setLight(0)
-        tmr.delay(300000)
+        tmr.delay(300000)  -- 300 millisecond
 
         -- clean up our global timer if we're done
         if index > string.len(message) then
@@ -50,11 +53,12 @@ function displayMessage(message)
             index = index + 1
         end
     end)
+    MESSAGE_TIMER:start()
 end
 
 -- unregister the NodeMCU timer we use for message polling and display
 function stopMessageTimer()
-    tmr.unregister(MESSAGE_TIMER_ID)
+    MESSAGE_TIMER:unregister()
 end
 
 -- string trimming
