@@ -1,13 +1,14 @@
-ANIM_TIMER_ID = 1 -- Use NodeMCU timer id 1 for animations
+ANIM_TIMER = tmr.create() 
+ANIM_DELAY = 250
 
 -- cycle through all lights in order, ascending then descending, forever and ever
-function animateLights()
+function animateLightsLinear()
     local light = 0
     local ascending = true
-    local maxLight = 8 * #CHIP_IO_PINS
+    local maxLight = 32
 
-    stopAnimation()
-    tmr.alarm(ANIM_TIMER_ID, 100, tmr.ALARM_AUTO, function()
+    ANIM_TIMER:unregister()
+    ANIM_TIMER:register(ANIM_DELAY, tmr.ALARM_AUTO, function()
         if light == 1 then
             ascending = true
         elseif light == maxLight then
@@ -22,46 +23,34 @@ function animateLights()
 
         setLight(light)
     end)
+    ANIM_TIMER:start()
 end
 
--- same as animateLights, but optimized to avoid resetting all 4 chips each cycle
-function animateLightsOpt()
-    local chip = 1
+-- cycle through all lights in order, ascending then descending, forever and ever
+function animateLightsStripe()
     local light = 0
-    local ascending = true
+    local waxing = true
+    local maxLight = 32
 
-    stopAnimation()
-    tmr.alarm(ANIM_TIMER_ID, 100, tmr.ALARM_AUTO, function()
-        -- switch directions at each end
-        if (chip == #CHIP_IO_PINS and light == 8 and ascending == true) then
-            ascending = false
-        elseif (chip == 1 and light == 1 and ascending == false) then
-            ascending = true
+    ANIM_TIMER:unregister()
+    ANIM_TIMER:register(ANIM_DELAY, tmr.ALARM_AUTO, function()
+        if light == maxLight then
+            waxing = not waxing
+            light = 0
         end
 
-        -- increment or decrement the active light
-        --   when transitioning to a different chip, first zero out the previous chip
-        if ascending == true then
-            light = light + 1
-            if light > 8 then
-                sendData(chip, 0)
-                chip = chip + 1
-                light = 1
-            end
+        light = light + 1
+
+        if waxing == true then
+            addLight(light)
         else
-            light = light - 1
-            if light < 1 then
-                sendData(chip, 0)
-                chip = chip - 1
-                light = 8
-            end
+            removeLight(light)
         end
-
-        sendData(chip, LIGHT_BYTE[light])
     end)
+    ANIM_TIMER:start()
 end
 
 -- unregister the NodeMCU timer we use for animations
 function stopAnimation()
-    tmr.unregister(ANIM_TIMER_ID)
+    ANIM_TIMER:unregister()
 end

@@ -1,44 +1,56 @@
--- we use pin 13 for serial input (DS) and 14 for storage reset clock (SHCP)
---   on all four chips, and a separate GPIO pin for each 595's shift register clock (STCP)
---   which allows us to write to any one chip at a time using the SPI bus
+-- Set output state on 4 cascaded 74HC595s using the ESP8266's HSPI (hardware SPI bus id 1)
+--
+--    Connect Nodemcu D7 (GPIO13) to 74HC595 Data (pin 14)
+--    Connect Nodemcu D5 (GPIO14) to 74HC595 Clock (pin 11)
+--    Connect Nodemcu D8 (GPIO15) to 74HC595 Latch (pin 12)
 
--- we use the 8266's GPIO pins to control each of 4 shift register chips
--- note that NodeMCU's pin numbering differs from the pinout on the board ¯\_(ツ)_/¯
+-- NodeMCU's pin numbering differs from the pinout on the board ¯\_(ツ)_/¯
 --     https://nodemcu.readthedocs.io/en/master/en/modules/gpio/
-CHIP_IO_PINS = {8, 4, 2, 1} -- corresponds to GPIO pins 15, 2, 4, 5 on the 8266 board
+
+local bit = require("bit")
+local LATCH_GPIO = 8
+
+local CURRENT_OUTPUT_STATE = 0
 
 -- initialize SPI, set our GPIO control pins to output mode, and zero out the attached shift registers
 function setupController()
-  spi.setup(1, spi.MASTER, spi.CPOL_LOW, spi.CPHA_LOW, spi.DATABITS_8, 0)
+  spi.setup(1, spi.MASTER, spi.CPOL_HIGH, spi.CPHA_LOW, 32, 0)
+  gpio.mode(LATCH_GPIO, gpio.OUTPUT)
 
-  for i = 1, #CHIP_IO_PINS do
-    gpio.mode(CHIP_IO_PINS[i], gpio.OUTPUT)
-    sendData(i, 0)
-  end
+  CURRENT_OUTPUT_STATE = 0
+  updateOutputPins()
 end
 
--- shift register bit patterns for turning on individual output pins
-LIGHT_BYTE = {1,2,4,8,16,32,64,128}
 
--- write 8 bits to one of the shift register chips by flipping the selected chip's STCP pin
-function sendData(chip, byte)
-    gpio.write(CHIP_IO_PINS[chip], gpio.LOW)
-    spi.send(1,byte)
-    gpio.write(CHIP_IO_PINS[chip], gpio.HIGH)
+-- write 32 bits to the shift register chips via SPI
+function updateOutputPins()
+    gpio.write(LATCH_GPIO, gpio.LOW)
+
+    spi.send(1, CURRENT_OUTPUT_STATE)
+
+    gpio.write(LATCH_GPIO, gpio.HIGH)
 end
 
 -- turn on a single pin on a single 595, and turn off all other pins
--- note this writes to all chips in serial so it's slow; keeping state is faster
 function setLight(lightId)
-    local chip = math.ceil(lightId / 8)
-    local light = ((lightId-1) % 8) + 1
-    for i = 1, #CHIP_IO_PINS do
-        if i == chip then
-            sendData(i, LIGHT_BYTE[light])
-        else
-            sendData(i, 0)
-        end
-    end
+    --CURRENT_OUTPUT_STATE = (lightId ~= 0) and bit.lshift(1, lightId - 1) or 0
+    CURRENT_OUTPUT_STATE = (lightId ~= 0) and bit.set(1, lightId - 1) or 0
+
+    updateOutputPins()
+end
+
+-- turn on a pin, leave all other pins as-is
+function addLight(lightId)
+    --CURRENT_OUTPUT_STATE = bit.bor(CURRENT_OUTPUT_STATE, (lightId ~= 0) and bit.lshift(1, lightId - 1) or 0)
+    CURRENT_OUTPUT_STATE = (lightId ~= 0) and bit.set(CURRENT_OUTPUT_STATE, lightId - 1) or CURRENT_OUTPUT_STATE
+    updateOutputPins()
+end
+
+-- turn off a pin, leave all other pins as-is
+function removeLight(lightId)
+    --CURRENT_OUTPUT_STATE = (lightId == 0) and CURRENT_OUTPUT_STATE or bit.band(CURRENT_OUTPUT_STATE, bit.bnot(bit.lshift(1, lightId - 1)))
+    CURRENT_OUTPUT_STATE = (lightId == 0) and CURRENT_OUTPUT_STATE or bit.clear(CURRENT_OUTPUT_STATE, lightId - 1)
+    updateOutputPins()
 end
 
 -- illuminates the light corresponding to the first character in the string `letter`
