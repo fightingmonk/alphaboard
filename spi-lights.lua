@@ -25,16 +25,18 @@ end
 -- write 32 bits to the shift register chips via SPI
 function updateOutputPins()
     gpio.write(LATCH_GPIO, gpio.LOW)
+    tmr.delay(100)
 
     spi.send(1, CURRENT_OUTPUT_STATE)
 
+    tmr.delay(100)
     gpio.write(LATCH_GPIO, gpio.HIGH)
 end
 
 -- turn on a single pin on a single 595, and turn off all other pins
 function setLight(lightId)
     --CURRENT_OUTPUT_STATE = (lightId ~= 0) and bit.lshift(1, lightId - 1) or 0
-    CURRENT_OUTPUT_STATE = (lightId ~= 0) and bit.set(1, lightId - 1) or 0
+    CURRENT_OUTPUT_STATE = (lightId ~= 0) and bit.set(0, lightId - 1) or 0
 
     updateOutputPins()
 end

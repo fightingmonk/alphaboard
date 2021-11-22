@@ -27,7 +27,7 @@ Follow the wiring diagram from [ESP8266 With 74HC595 LED and Matrix Driver](http
 
 ## Interactive use
 
-Once you've uploaded this code to your board, you can use a serial terminal to
+Once you've uploaded this code to your board, you can use a serial terminal (easy peasy with `nodemcu-uploader terminal`) to
 run some of the functions interactively.
 
 `setLight(lightIndex)` turns on a single output pin, specified by `lightIndex`.
