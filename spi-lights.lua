@@ -14,45 +14,59 @@ local CURRENT_OUTPUT_STATE = 0
 
 -- initialize SPI, set our GPIO control pins to output mode, and zero out the attached shift registers
 function setupController()
-  spi.setup(1, spi.MASTER, spi.CPOL_HIGH, spi.CPHA_LOW, 32, 0)
-  gpio.mode(LATCH_GPIO, gpio.OUTPUT)
+    spi.setup(1, spi.MASTER, spi.CPOL_HIGH, spi.CPHA_HIGH, 32, 0)
+    gpio.mode(LATCH_GPIO, gpio.OUTPUT)
 
-  CURRENT_OUTPUT_STATE = 0
-  updateOutputPins()
+    setAndOutputState(0)
 end
 
+function setAndOutputState(value)
+    CURRENT_OUTPUT_STATE = value
+    updateOutputPins(CURRENT_OUTPUT_STATE)
+end
+
+function outputCurrentState()
+    updateOutputPins(CURRENT_OUTPUT_STATE)
+end
 
 -- write 32 bits to the shift register chips via SPI
-function updateOutputPins()
+function updateOutputPins(value)
     gpio.write(LATCH_GPIO, gpio.LOW)
-    tmr.delay(10000) -- 10 millisecond
+--    tmr.delay(10000) -- 10 millisecond
 
-    spi.send(1, CURRENT_OUTPUT_STATE)
+    spi.send(1, value)
 
-    tmr.delay(10000) -- 10 millisecond
+--    tmr.delay(10000) -- 10 millisecond
     gpio.write(LATCH_GPIO, gpio.HIGH)
 end
 
 -- turn on a single pin on a single 595, and turn off all other pins
 function setLight(lightId)
-    --CURRENT_OUTPUT_STATE = (lightId ~= 0) and bit.lshift(1, lightId - 1) or 0
-    CURRENT_OUTPUT_STATE = (lightId ~= 0) and bit.set(0, lightId - 1) or 0
-
-    updateOutputPins()
+    if lightId > 0 then
+        setAndOutputState(bit.bit(lightId-1))
+    else
+        setAndOutputState(0)
+    end
 end
 
 -- turn on a pin, leave all other pins as-is
 function addLight(lightId)
-    --CURRENT_OUTPUT_STATE = bit.bor(CURRENT_OUTPUT_STATE, (lightId ~= 0) and bit.lshift(1, lightId - 1) or 0)
-    CURRENT_OUTPUT_STATE = (lightId ~= 0) and bit.set(CURRENT_OUTPUT_STATE, lightId - 1) or CURRENT_OUTPUT_STATE
-    updateOutputPins()
+    if lightId > 0 then
+        CURRENT_OUTPUT_STATE = bit.set(CURRENT_OUTPUT_STATE, lightId-1)
+    end
+    -- CURRENT_OUTPUT_STATE = bit.bor(CURRENT_OUTPUT_STATE, (lightId ~= 0) and bit.lshift(1, lightId - 1) or 0)
+    -- CURRENT_OUTPUT_STATE = (lightId ~= 0) and bit.set(CURRENT_OUTPUT_STATE, lightId - 1) or CURRENT_OUTPUT_STATE
+    outputCurrentState()
 end
 
 -- turn off a pin, leave all other pins as-is
 function removeLight(lightId)
-    --CURRENT_OUTPUT_STATE = (lightId == 0) and CURRENT_OUTPUT_STATE or bit.band(CURRENT_OUTPUT_STATE, bit.bnot(bit.lshift(1, lightId - 1)))
-    CURRENT_OUTPUT_STATE = (lightId == 0) and CURRENT_OUTPUT_STATE or bit.clear(CURRENT_OUTPUT_STATE, lightId - 1)
-    updateOutputPins()
+    if lightId > 0 then
+        CURRENT_OUTPUT_STATE = bit.clear(CURRENT_OUTPUT_STATE, lightId - 1)
+    end
+    -- CURRENT_OUTPUT_STATE = (lightId == 0) and CURRENT_OUTPUT_STATE or bit.band(CURRENT_OUTPUT_STATE, bit.bnot(bit.lshift(1, lightId - 1)))
+    -- CURRENT_OUTPUT_STATE = (lightId == 0) and CURRENT_OUTPUT_STATE or bit.clear(CURRENT_OUTPUT_STATE, lightId - 1)
+    outputCurrentState()
 end
 
 -- illuminates the light corresponding to the first character in the string `letter`

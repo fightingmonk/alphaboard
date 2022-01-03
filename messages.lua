@@ -1,34 +1,43 @@
 dofile("secrets.lua")
+--dofile("animations.lua")
 
 local MESSAGE_TIMER = tmr.create() 
 local LETTER_DURATION = 2000
-local POLL_DELAY = 60000 -- how long to wait before checking for a message
 
--- check our message server for a queued message after a configured delay
--- if we receive a non-blank response body (after trimming whitespace) then 
---   display the message; otherwise re-invoke ourself
-function checkForMessagesSoon()
-    MESSAGE_TIMER:unregister()
-    MESSAGE_TIMER:register(POLL_DELAY, tmr.ALARM_SINGLE, function()
-        http.post(MESSAGE_SERVER_URL,
-            'Content-Type: application/x-www-form-urlencoded\r\n',
-            'FetchKey=' .. MESSAGE_SERVER_SECRET,
-            function(code, data)
-                if (code < 0) then
-                    print("HTTP request failed", code)
-                    checkForMessagesSoon()
-                else
-                    message = trim(data)
-                    if string.len(message) > 0 then
-                        print("got a message:", message)
-                        displayMessage(message)
-                    else
-                        checkForMessagesSoon()
-                    end
-                end
-            end)
-    end)
-    MESSAGE_TIMER:start()
+local ws = nil
+
+function connectToMessageServer()
+    if (MESSAGE_SERVER_URL == nil or MESSAGE_SERVER_URL == '') then
+        return
+    end
+
+    if ws == nil then
+        ws = websocket.createClient()
+        ws:on("connection", function(ws)
+          print('Connected to message server')
+        end)
+        ws:on("receive", function(_, msg, opcode)
+          msg = trim(string.upper(msg))
+          print('got message:', msg, opcode) -- opcode is 1 for text message, 2 for binary
+          
+          if msg == 'HALO' then
+            -- ignore the hello
+          elseif msg == 'LINEAR' then
+            animateLightsLinear()
+          elseif msg == 'STRIPE' then
+            animateLightsStripe()
+          else
+            displayMessage(msg)
+          end
+        end)
+        ws:on("close", function(_, status)
+          print('message server disconnected', status)
+          ws = nil -- required to lua gc the websocket client
+          connectToMessageServer()
+        end)
+    end
+
+    ws:connect(MESSAGE_SERVER_URL)
 end
 
 -- display a message letter by letter
@@ -46,7 +55,6 @@ function displayMessage(message)
         -- clean up our global timer if we're done
         if index > string.len(message) then
             stopMessageTimer()
-            checkForMessagesSoon()
         else
             -- display the current letter of the message
             displayLetter(string.sub(message, index))

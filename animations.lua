@@ -1,5 +1,5 @@
 local ANIM_TIMER = tmr.create()
-local ANIM_DELAY = 250
+local ANIM_DELAY = 500
 
 -- cycle through all lights in order, ascending then descending, forever and ever
 function animateLightsLinear()

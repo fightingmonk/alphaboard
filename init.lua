@@ -16,8 +16,8 @@ end
 
 setupController()      -- init SPI
 
-animateLightsStripe()  -- animate the lights to show we're alive
+animateLightsLinear()  -- animate the lights to show we're alive
 
 if string.len(MESSAGE_SERVER_URL) > 0 then
-    checkForMessagesSoon() -- start looking for messages from the server, if configured
+    connectToMessageServer() -- start looking for messages from the server, if configured
 end
