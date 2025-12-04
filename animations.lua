@@ -5,7 +5,7 @@ local ANIM_DELAY = 500
 function animateLightsLinear()
     local light = 0
     local ascending = true
-    local maxLight = 32
+    local maxLight = 28
 
     ANIM_TIMER:unregister()
     ANIM_TIMER:register(ANIM_DELAY, tmr.ALARM_AUTO, function()

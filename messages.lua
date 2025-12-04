@@ -23,8 +23,10 @@ function connectToMessageServer()
           if msg == 'HALO' then
             -- ignore the hello
           elseif msg == 'LINEAR' then
+            stopMessageTimer()
             animateLightsLinear()
           elseif msg == 'STRIPE' then
+            stopMessageTimer()
             animateLightsStripe()
           else
             displayMessage(msg)
@@ -54,7 +56,9 @@ function displayMessage(message)
 
         -- clean up our global timer if we're done
         if index > string.len(message) then
-            stopMessageTimer()
+            setLight(0)
+            tmr.delay(300000)
+            index = 1
         else
             -- display the current letter of the message
             displayLetter(string.sub(message, index))

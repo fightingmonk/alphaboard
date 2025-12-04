@@ -33,6 +33,7 @@ end
 
 -- write 32 bits to the shift register chips via SPI
 function updateOutputPins(value)
+    print(string.format("updateOutputPins: 0x%08X", value))
     gpio.write(LATCH_GPIO, gpio.LOW)
 --    tmr.delay(10000) -- 10 millisecond
 
