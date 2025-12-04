@@ -13,10 +13,10 @@ Net::WebSocket::Server->new(
 		my ($serv, $conn) = @_;
 	$addr = $conn->ip();
 		$conn->on(
-		ready => sub {
-		my ($conn) = @_;
-		$conn->send_utf8("HALO");
-		},
+			ready => sub {
+				my ($conn) = @_;
+				$conn->send_utf8("HALO");
+			},
 			utf8 => sub {
 				my ($conn, $msg) = @_;
 				$conn->send_utf8($msg);
