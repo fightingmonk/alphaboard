@@ -9,12 +9,14 @@
 
 local bit = require("bit")
 local LATCH_GPIO = 8
+local DATA_BITS = 8 * 4 -- 8 * # of daisy-chained shift registers
+local SPI_FREQUENCY_DIVIDER = 160 -- f(SPI) = 80 Mhz / SPI_FREQUENCY_DIVIDER
 
 local CURRENT_OUTPUT_STATE = 0
 
 -- initialize SPI, set our GPIO control pins to output mode, and zero out the attached shift registers
 function setupController()
-    spi.setup(1, spi.MASTER, spi.CPOL_HIGH, spi.CPHA_HIGH, 32, 0)
+    spi.setup(1, spi.MASTER, spi.CPOL_LOW, spi.CPHA_LOW, DATA_BITS, SPI_FREQUENCY_DIVIDER)
     gpio.mode(LATCH_GPIO, gpio.OUTPUT)
 
     setAndOutputState(0)
